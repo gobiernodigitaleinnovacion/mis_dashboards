@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🇲🇽 Concentración Económica México 2004-2019</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .dashboard-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .year-selector {
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .year-selector:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .insights-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .insights-box h4 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+        }
+        
+        .insights-box ul {
+            list-style: none;
+        }
+        
+        .insights-box li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .insights-box li:last-child {
+            border-bottom: none;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .ranking-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .dashboard-section {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        
+        .dashboard-section:nth-child(2) { animation-delay: 0.1s; }
+        .dashboard-section:nth-child(3) { animation-delay: 0.2s; }
+        .dashboard-section:nth-child(4) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🇲🇽 CONCENTRACIÓN ECONÓMICA MÉXICO</h1>
+            <p>Análisis de la distribución geográfica de unidades económicas (2004-2019)</p>
+            <p><strong>Gobierno Digital e Innovación</strong></p>
+        </div>
+
+        <!-- Estadísticas Principales -->
+        <div class="dashboard-section">
+            <h2 class="section-title">📊 Estadísticas Clave</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">40.9%</div>
+                    <div class="stat-label">Top 5 Estados (2019)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">62.4%</div>
+                    <div class="stat-label">Top 10 Estados (2019)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">74.9%</div>
+                    <div class="stat-label">Top 15 Estados (2019)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">-1.4pp</div>
+                    <div class="stat-label">Cambio Top 5 (2004-2019)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfica de Evolución -->
+        <div class="dashboard-section">
+            <h2 class="section-title">📈 Evolución de la Concentración Económica</h2>
+            <div class="chart-container">
+                <canvas id="concentrationChart"></canvas>
+            </div>
+            <div class="insights-box">
+                <h4>💡 Insights Clave:</h4>
+                <ul>
+                    <li><strong>Desconcentración gradual:</strong> Top 5 pasa de 42.3% a 40.9% (-1.4 puntos)</li>
+                    <li><strong>Estabilidad estructural:</strong> Top 10 se mantiene estable (~62%)</li>
+                    <li><strong>Persistencia:</strong> 7 estados concentran consistentemente 50% de la economía</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Top Estados -->
+        <div class="dashboard-section">
+            <h2 class="section-title">🏆 Top 15 Estados por Unidades Económicas</h2>
+            <div class="controls">
+                <select class="year-selector" id="yearSelector" onchange="updateStatesChart()">
+                    <option value="2004">2004</option>
+                    <option value="2019" selected>2019</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="statesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Tabla de Datos -->
+        <div class="dashboard-section">
+            <h2 class="section-title">📋 Datos Detallados 2019</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ranking</th>
+                        <th>Estado</th>
+                        <th>Unidades Económicas</th>
+                        <th>Participación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="ranking-badge">#1</span></td><td>México</td><td>624,472</td><td>13.01%</td></tr>
+                    <tr><td><span class="ranking-badge">#2</span></td><td>CDMX</td><td>427,959</td><td>8.92%</td></tr>
+                    <tr><td><span class="ranking-badge">#3</span></td><td>Jalisco</td><td>335,120</td><td>6.98%</td></tr>
+                    <tr><td><span class="ranking-badge">#4</span></td><td>Puebla</td><td>298,183</td><td>6.21%</td></tr>
+                    <tr><td><span class="ranking-badge">#5</span></td><td>Veracruz</td><td>278,230</td><td>5.80%</td></tr>
+                    <tr><td><span class="ranking-badge">#6</span></td><td>Guanajuato</td><td>242,534</td><td>5.05%</td></tr>
+                    <tr><td><span class="ranking-badge">#7</span></td><td>Michoacán</td><td>230,966</td><td>4.81%</td></tr>
+                    <tr><td><span class="ranking-badge">#8</span></td><td>Oaxaca</td><td>219,176</td><td>4.57%</td></tr>
+                    <tr><td><span class="ranking-badge">#9</span></td><td>Chiapas</td><td>186,996</td><td>3.90%</td></tr>
+                    <tr><td><span class="ranking-badge">#10</span></td><td>Nuevo León</td><td>151,448</td><td>3.16%</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Movilidad en Rankings -->
+        <div class="dashboard-section">
+            <h2 class="section-title">🔄 Cambios en Rankings (2004-2019)</h2>
+            <div class="chart-container">
+                <canvas id="mobilityChart"></canvas>
+            </div>
+            <div class="insights-box">
+                <h4>🚀 Dinámicas Regionales:</h4>
+                <ul>
+                    <li><strong>🟢 Hidalgo:</strong> +8 posiciones (mayor ascenso)</li>
+                    <li><strong>🟢 Yucatán:</strong> +5 posiciones (boom turístico)</li>
+                    <li><strong>🔴 Coahuila:</strong> -6 posiciones (crisis industrial)</li>
+                    <li><strong>🔴 Sonora:</strong> -4 posiciones (dependencia minera)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos
+        const concentrationData = {
+            labels: ['2004', '2009', '2014', '2019'],
+            datasets: [
+                {
+                    label: 'Top 5 Estados',
+                    data: [42.3, 41.5, 41.5, 40.9],
+                    borderColor: '#ff6b6b',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Top 10 Estados',
+                    data: [62.5, 61.9, 62.4, 62.4],
+                    borderColor: '#4ecdc4',
+                    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Top 15 Estados',
+                    data: [75.5, 75.0, 75.0, 74.9],
+                    borderColor: '#45b7d1',
+                    backgroundColor: 'rgba(69, 183, 209, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        };
+
+        const statesData2019 = [
+            { estado: 'México', ue: 624472, participacion: 13.01 },
+            { estado: 'CDMX', ue: 427959, participacion: 8.92 },
+            { estado: 'Jalisco', ue: 335120, participacion: 6.98 },
+            { estado: 'Puebla', ue: 298183, participacion: 6.21 },
+            { estado: 'Veracruz', ue: 278230, participacion: 5.80 },
+            { estado: 'Guanajuato', ue: 242534, participacion: 5.05 },
+            { estado: 'Michoacán', ue: 230966, participacion: 4.81 },
+            { estado: 'Oaxaca', ue: 219176, participacion: 4.57 },
+            { estado: 'Chiapas', ue: 186996, participacion: 3.90 },
+            { estado: 'Nuevo León', ue: 151448, participacion: 3.16 }
+        ];
+
+        const statesData2004 = [
+            { estado: 'México', ue: 364921, participacion: 12.14 },
+            { estado: 'CDMX', ue: 342475, participacion: 11.40 },
+            { estado: 'Jalisco', ue: 214768, participacion: 7.15 },
+            { estado: 'Veracruz', ue: 184668, participacion: 6.15 },
+            { estado: 'Puebla', ue: 165237, participacion: 5.50 },
+            { estado: 'Guanajuato', ue: 150800, participacion: 5.02 },
+            { estado: 'Michoacán', ue: 141543, participacion: 4.71 },
+            { estado: 'Nuevo León', ue: 110163, participacion: 3.67 },
+            { estado: 'Oaxaca', ue: 107120, participacion: 3.56 },
+            { estado: 'Guerrero', ue: 95254, participacion: 3.17 }
+        ];
+
+        const mobilityData = {
+            labels: ['Hidalgo', 'Yucatán', 'Baja Cal.', 'Chiapas', 'Coahuila', 'Sonora', 'Chihuahua', 'Morelos'],
+            datasets: [{
+                label: 'Cambio en Posiciones',
+                data: [8, 5, 4, 2, -6, -4, -3, -2],
+                backgroundColor: [
+                    '#10b981', '#10b981', '#10b981', '#10b981',
+                    '#ef4444', '#ef4444', '#ef4444', '#ef4444'
+                ],
+                borderWidth: 0
+            }]
+        };
+
+        // Configuraciones de Chart.js
+        Chart.defaults.font.family = 'Arial';
+        Chart.defaults.font.size = 12;
+
+        // Gráfica de Concentración
+        const concentrationCtx = document.getElementById('concentrationChart').getContext('2d');
+        new Chart(concentrationCtx, {
+            type: 'line',
+            data: concentrationData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 35,
+                        max: 80,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+
+        // Gráfica de Estados
+        let statesChart;
+        function updateStatesChart() {
+            const year = document.getElementById('yearSelector').value;
+            const data = year === '2019' ? statesData2019 : statesData2004;
+            
+            if (statesChart) {
+                statesChart.destroy();
+            }
+
+            const statesCtx = document.getElementById('statesChart').getContext('2d');
+            statesChart = new Chart(statesCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.estado),
+                    datasets: [{
+                        label: 'Unidades Económicas (miles)',
+                        data: data.map(d => Math.round(d.ue / 1000)),
+                        backgroundColor: data.map((d, i) => {
+                            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43'];
+                            return colors[i % colors.length];
+                        }),
+                        borderWidth: 0,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + 'K unidades económicas';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfica de Movilidad
+        const mobilityCtx = document.getElementById('mobilityChart').getContext('2d');
+        new Chart(mobilityCtx, {
+            type: 'bar',
+            data: mobilityData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return (value > 0 ? '+' : '') + value + ' posiciones';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return (value > 0 ? '+' : '') + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Inicializar gráfica de estados
+        updateStatesChart();
+    </script>
+</body>
+</html>
