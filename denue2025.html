@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Empresarial México - DENUE</title>
+    
+    <!-- Librerías externas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .kpis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 4px solid;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .kpi-card.empresas { border-color: #e74c3c; }
+        .kpi-card.entidades { border-color: #3498db; }
+        .kpi-card.municipios { border-color: #2ecc71; }
+        .kpi-card.sectores { border-color: #f39c12; }
+        .kpi-card.cobertura { border-color: #9b59b6; }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .kpi-label {
+            color: #7f8c8d;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-3px);
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .data-table td:last-child {
+            font-weight: 600;
+            color: #e74c3c;
+        }
+
+        .footer {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            margin-top: 50px;
+            border-radius: 15px;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .kpi-value { font-size: 2rem; }
+            .container { padding: 20px 15px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1><i class="fas fa-chart-bar"></i> Dashboard Empresarial México</h1>
+        <p class="subtitle">Análisis Geoespacial DENUE - 6,097,675 Empresas</p>
+    </div>
+
+    <div class="container">
+        <!-- KPIs Principales -->
+        <div class="kpis-grid">
+            <div class="kpi-card empresas">
+                <div class="kpi-value">6,097,675</div>
+                <div class="kpi-label">
+                    <i class="fas fa-building"></i> Total Empresas
+                </div>
+            </div>
+            <div class="kpi-card entidades">
+                <div class="kpi-value">32</div>
+                <div class="kpi-label">
+                    <i class="fas fa-map"></i> Entidades Federativas
+                </div>
+            </div>
+            <div class="kpi-card municipios">
+                <div class="kpi-value">570</div>
+                <div class="kpi-label">
+                    <i class="fas fa-city"></i> Municipios
+                </div>
+            </div>
+            <div class="kpi-card sectores">
+                <div class="kpi-value">25</div>
+                <div class="kpi-label">
+                    <i class="fas fa-industry"></i> Sectores Económicos
+                </div>
+            </div>
+            <div class="kpi-card cobertura">
+                <div class="kpi-value">100%</div>
+                <div class="kpi-label">
+                    <i class="fas fa-globe"></i> Cobertura Geográfica
+                </div>
+            </div>
+        </div>
+
+        <!-- Mapa Interactivo -->
+        <div class="map-container">
+            <h2 class="chart-title">
+                <i class="fas fa-map-marker-alt"></i> Mapa de Hotspots Municipales
+            </h2>
+            <div id="map"></div>
+        </div>
+
+        <!-- Gráficas -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3 class="chart-title">
+                    <i class="fas fa-chart-bar"></i> Top 10 Entidades Federativas
+                </h3>
+                <canvas id="chartEntidades"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">
+                    <i class="fas fa-chart-pie"></i> Distribución por Tamaño de Empresa
+                </h3>
+                <canvas id="chartTamanos"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">
+                    <i class="fas fa-chart-line"></i> Evolución Temporal (2010-2024)
+                </h3>
+                <canvas id="chartTemporal"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3 class="chart-title">
+                    <i class="fas fa-chart-area"></i> Top 10 Sectores Económicos
+                </h3>
+                <canvas id="chartSectores"></canvas>
+            </div>
+        </div>
+
+        <!-- Tabla de Hotspots -->
+        <div class="table-container">
+            <h3 class="chart-title">
+                <i class="fas fa-fire"></i> Top 20 Hotspots Municipales
+            </h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ranking</th>
+                        <th>Municipio</th>
+                        <th>Entidad</th>
+                        <th>Total Empresas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>#1</td><td>Puebla</td><td>Puebla</td><td>106,279</td></tr>
+                    <tr><td>#2</td><td>Guadalajara</td><td>Jalisco</td><td>96,174</td></tr>
+                    <tr><td>#3</td><td>León</td><td>Guanajuato</td><td>91,193</td></tr>
+                    <tr><td>#4</td><td>Ecatepec de Morelos</td><td>México</td><td>90,045</td></tr>
+                    <tr><td>#5</td><td>Iztapalapa</td><td>Ciudad de México</td><td>88,187</td></tr>
+                    <tr><td>#6</td><td>Cuauhtémoc</td><td>Ciudad de México</td><td>67,134</td></tr>
+                    <tr><td>#7</td><td>Tijuana</td><td>Baja California</td><td>64,987</td></tr>
+                    <tr><td>#8</td><td>Monterrey</td><td>Nuevo León</td><td>61,703</td></tr>
+                    <tr><td>#9</td><td>Toluca</td><td>México</td><td>56,917</td></tr>
+                    <tr><td>#10</td><td>Mérida</td><td>Yucatán</td><td>56,014</td></tr>
+                    <tr><td>#11</td><td>Nezahualcóyotl</td><td>México</td><td>55,483</td></tr>
+                    <tr><td>#12</td><td>Querétaro</td><td>Querétaro</td><td>54,401</td></tr>
+                    <tr><td>#13</td><td>Zapopan</td><td>Jalisco</td><td>52,803</td></tr>
+                    <tr><td>#14</td><td>Morelia</td><td>Michoacán</td><td>52,775</td></tr>
+                    <tr><td>#15</td><td>Aguascalientes</td><td>Aguascalientes</td><td>51,534</td></tr>
+                    <tr><td>#16</td><td>Chihuahua</td><td>Chihuahua</td><td>49,306</td></tr>
+                    <tr><td>#17</td><td>San Luis Potosí</td><td>San Luis Potosí</td><td>44,576</td></tr>
+                    <tr><td>#18</td><td>Tuxtla Gutiérrez</td><td>Chiapas</td><td>41,421</td></tr>
+                    <tr><td>#19</td><td>Naucalpan</td><td>México</td><td>40,105</td></tr>
+                    <tr><td>#20</td><td>Culiacán</td><td>Sinaloa</td><td>39,856</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>Fuente:</strong> DENUE - INEGI | <strong>Análisis:</strong> Microsoft Fabric + ArcGIS</p>
+        <p>Dashboard Interactivo - Análisis Geoespacial de México Empresarial</p>
+    </div>
+
+    <script>
+        // Datos integrados del análisis DENUE
+        const dashboardData = {
+            entidades: [
+                {nombre: "México", empresas: 816715},
+                {nombre: "Ciudad de México", empresas: 460760},
+                {nombre: "Puebla", empresas: 408084},
+                {nombre: "Jalisco", empresas: 399102},
+                {nombre: "Veracruz", empresas: 354715},
+                {nombre: "Guanajuato", empresas: 294350},
+                {nombre: "Michoacán", empresas: 285392},
+                {nombre: "Oaxaca", empresas: 279836},
+                {nombre: "Chiapas", empresas: 249308},
+                {nombre: "Nuevo León", empresas: 207781}
+            ],
+            sectores: [
+                {nombre: "Comercio Por Menor 1", empresas: 672075},
+                {nombre: "Industrias Manufactureras", empresas: 651954},
+                {nombre: "Comercio Por Menor 3", empresas: 639384},
+                {nombre: "Comercio Por Menor 4", empresas: 635584},
+                {nombre: "Comercio Por Menor 2", empresas: 589295},
+                {nombre: "Sector 81-1", empresas: 520000},
+                {nombre: "Sector 72-1", empresas: 520000},
+                {nombre: "Sector 81-2", empresas: 414572},
+                {nombre: "Sector 72-2", empresas: 281050},
+                {nombre: "Servicios Salud", empresas: 272412}
+            ],
+            personal_ocupado: [
+                {categoria: "0 a 5 personas", empresas: 5377537},
+                {categoria: "6 a 10 personas", empresas: 370549},
+                {categoria: "11 a 30 personas", empresas: 237806},
+                {categoria: "31 a 50 personas", empresas: 46308},
+                {categoria: "51 a 100 personas", empresas: 32078},
+                {categoria: "101 a 250 personas", empresas: 20901},
+                {categoria: "251 y más personas", empresas: 12496}
+            ],
+            evolucion_temporal: [
+                {año: 2010, registros: 1517986},
+                {año: 2011, registros: 12767},
+                {año: 2012, registros: 8601},
+                {año: 2013, registros: 8821},
+                {año: 2014, registros: 753385},
+                {año: 2016, registros: 34275},
+                {año: 2017, registros: 13030},
+                {año: 2018, registros: 38369},
+                {año: 2019, registros: 1246820},
+                {año: 2020, registros: 50635},
+                {año: 2021, registros: 28126},
+                {año: 2022, registros: 3077},
+                {año: 2023, registros: 43554},
+                {año: 2024, registros: 2213087}
+            ],
+            municipios_coordenadas: [
+                {nombre: "Puebla, Puebla", lat: 19.0414, lng: -98.2063, empresas: 106279},
+                {nombre: "Guadalajara, Jalisco", lat: 20.6597, lng: -103.3496, empresas: 96174},
+                {nombre: "León, Guanajuato", lat: 21.1619, lng: -101.6947, empresas: 91193},
+                {nombre: "Ecatepec, México", lat: 19.6097, lng: -99.0600, empresas: 90045},
+                {nombre: "Iztapalapa, CDMX", lat: 19.3570, lng: -99.0558, empresas: 88187},
+                {nombre: "Cuauhtémoc, CDMX", lat: 19.4326, lng: -99.1332, empresas: 67134},
+                {nombre: "Tijuana, B.C.", lat: 32.5149, lng: -117.0382, empresas: 64987},
+                {nombre: "Monterrey, N.L.", lat: 25.6866, lng: -100.3161, empresas: 61703},
+                {nombre: "Toluca, México", lat: 19.2926, lng: -99.6568, empresas: 56917},
+                {nombre: "Mérida, Yucatán", lat: 20.9674, lng: -89.5926, empresas: 56014}
+            ]
+        };
+
+        // Crear gráfica de entidades
+        function createEntitiesChart() {
+            const ctx = document.getElementById('chartEntidades').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dashboardData.entidades.map(e => e.nombre),
+                    datasets: [{
+                        label: 'Empresas',
+                        data: dashboardData.entidades.map(e => e.empresas),
+                        backgroundColor: [
+                            '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+                            '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#8e44ad'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { maxRotation: 45 } },
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { callback: function(value) { return value.toLocaleString(); } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear gráfica de tamaños
+        function createSizeChart() {
+            const ctx = document.getElementById('chartTamanos').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: dashboardData.personal_ocupado.map(p => p.categoria),
+                    datasets: [{
+                        data: dashboardData.personal_ocupado.map(p => p.empresas),
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                            '#9966FF', '#FF9F40', '#FF6384'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        // Crear gráfica temporal
+        function createTemporalChart() {
+            const ctx = document.getElementById('chartTemporal').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dashboardData.evolucion_temporal.map(t => t.año),
+                    datasets: [{
+                        label: 'Registros',
+                        data: dashboardData.evolucion_temporal.map(t => t.registros),
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { callback: function(value) { return value.toLocaleString(); } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear gráfica de sectores
+        function createSectorsChart() {
+            const ctx = document.getElementById('chartSectores').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dashboardData.sectores.map(s => s.nombre),
+                    datasets: [{
+                        label: 'Empresas',
+                        data: dashboardData.sectores.map(s => s.empresas),
+                        backgroundColor: 'rgba(243, 156, 18, 0.8)',
+                        borderColor: 'rgba(243, 156, 18, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { 
+                            beginAtZero: true,
+                            ticks: { callback: function(value) { return value.toLocaleString(); } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear mapa
+        function createMap() {
+            const map = L.map('map').setView([23.6345, -102.5528], 5);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Agregar marcadores de hotspots
+            dashboardData.municipios_coordenadas.forEach((municipio, index) => {
+                const size = Math.max(8, Math.min(25, municipio.empresas / 5000));
+                
+                L.circleMarker([municipio.lat, municipio.lng], {
+                    radius: size,
+                    fillColor: index < 3 ? '#e74c3c' : '#f39c12',
+                    color: '#c0392b',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.7
+                }).addTo(map)
+                .bindPopup(`
+                    <b>${municipio.nombre}</b><br>
+                    Empresas: ${municipio.empresas.toLocaleString()}<br>
+                    Ranking: #${index + 1}
+                `);
+            });
+        }
+
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            createEntitiesChart();
+            createSizeChart();
+            createTemporalChart();
+            createSectorsChart();
+            createMap();
+        });
+    </script>
+</body>
+</html>
