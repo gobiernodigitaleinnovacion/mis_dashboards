@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INEGI - Censos Económicos 2024 (Datos Reales)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            margin: 15px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .controls {
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .search-box, .filter-select {
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .search-box:focus, .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .filter-select {
+            min-width: 180px;
+            cursor: pointer;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        th {
+            background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #f1f3f4;
+            vertical-align: top;
+        }
+        
+        tr:hover {
+            background-color: #f8f9ff;
+        }
+        
+        .entity-cell {
+            font-weight: 600;
+            color: #2c3e50;
+            min-width: 120px;
+        }
+        
+        .sector-cell {
+            color: #7c3aed;
+            font-weight: 500;
+            max-width: 200px;
+        }
+        
+        .number-cell {
+            text-align: right;
+            font-weight: 600;
+            color: #1e40af;
+        }
+        
+        .new-2024 {
+            background: #e8f5e8 !important;
+        }
+        
+        .stats {
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .results-info {
+            padding: 15px 25px;
+            background: #e7f3ff;
+            border-left: 4px solid #667eea;
+            color: #1e40af;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 INEGI - Censos Económicos 2024</h1>
+            <p>Establecimientos que iniciaron actividades en 2024 y antes de 2024, por entidad federativa y sectores agrupados según sexo</p>
+        </div>
+        
+        <div class="controls">
+            <input type="text" class="search-box" id="searchInput" placeholder="🔍 Buscar por entidad o denominación...">
+            <select class="filter-select" id="entityFilter">
+                <option value="">📍 Todas las entidades</option>
+            </select>
+            <select class="filter-select" id="sectorFilter">
+                <option value="">🏢 Todos los sectores</option>
+            </select>
+        </div>
+        
+        <div class="results-info" id="resultsInfo">
+            Mostrando <span id="showingCount">0</span> de <span id="totalCount">0</span> registros
+        </div>
+        
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>🌎 Entidad</th>
+                        <th>📋 Denominación</th>
+                        <th>🏢 Total Est.</th>
+                        <th>👥 Personal Total</th>
+                        <th>👩 Mujeres</th>
+                        <th>👨 Hombres</th>
+                        <th>✨ Est. 2024</th>
+                        <th>👥 Personal 2024</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="totalRows">0</div>
+                <div class="stat-label">Registros</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalEstablishments">0</div>
+                <div class="stat-label">Establecimientos</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="new2024">0</div>
+                <div class="stat-label">Nuevos 2024</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalPersonal">0</div>
+                <div class="stat-label">Personal Total</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos reales del INEGI
+        const rawData = `00 EUM	Total	7 093 631	36 592 279	16 644 809	19 947 470	 242 679	 457 079
+00 EUM	Industrias manufactureras	 803 392	7 593 542	3 024 069	4 569 473	 16 347	 35 958
+00 EUM	Comercio	3 162 166	9 664 075	4 781 133	4 882 943	 113 327	 176 212
+00 EUM	Servicios privados no financieros	2 430 451	9 489 743	4 608 307	4 881 436	 109 556	 217 090
+00 EUM	Servicios públicos	 381 950	5 924 320	3 130 556	2 793 764	 1 595	 19 940
+00 EUM	Asociaciones religiosas	 176 811	 640 691	 299 122	 341 569	  534	 1 485
+00 EUM	Otras actividades económicas	 138 860	3 279 907	 801 621	2 478 286	 1 320	 6 394
+01 Ags.	Total 	 78 230	 536 468	 231 754	 304 714	 3 379	 6 801
+01 Ags.	Industrias manufactureras	 7 261	 159 477	 59 320	 100 157	  168	  408
+01 Ags.	Comercio	 32 088	 117 123	 54 666	 62 456	 1 380	 2 376
+01 Ags.	Servicios privados no financieros	 33 558	 135 217	 66 245	 68 972	 1 797	 3 814
+01 Ags.	Servicios públicos	 2 921	 79 187	 42 482	 36 705	  15	  166
+01 Ags.	Asociaciones religiosas	  989	 3 508	 1 781	 1 728	  6	  16
+01 Ags.	Otras actividades económicas	 1 412	 41 957	 7 260	 34 697	  13	  21
+02 BC	Total	 142 150	1 344 868	 590 729	 754 139	 4 962	 11 177
+02 BC	Industrias manufactureras	 9 649	 515 776	 224 403	 291 373	  239	  809
+02 BC	Comercio	 54 519	 270 297	 117 595	 152 702	 1 986	 3 435
+02 BC	Servicios privados no financieros	 62 935	 310 548	 143 568	 166 981	 2 615	 6 092
+02 BC	Servicios públicos	 5 810	 140 623	 75 817	 64 806	  28	  486
+02 BC	Asociaciones religiosas	 4 558	 16 156	 6 841	 9 315	  25	  67
+02 BC	Otras actividades económicas	 4 680	 91 468	 22 505	 68 963	  69	  288
+03 BCS	Total	 43 405	 300 857	 130 316	 170 542	 2 194	 4 413
+03 BCS	Industrias manufactureras	 3 602	 14 951	 4 650	 10 301	  154	  299
+03 BCS	Comercio	 15 154	 69 131	 32 731	 36 400	  803	 1 361
+03 BCS	Servicios privados no financieros	 19 204	 114 311	 53 994	 60 317	 1 199	 2 541
+03 BCS	Servicios públicos	 2 310	 56 397	 28 706	 27 691	  14	  97
+03 BCS	Asociaciones religiosas	  889	 2 911	 1 263	 1 648	  10	  31
+03 BCS	Otras actividades económicas	 2 246	 43 157	 8 972	 34 185	  14	  84
+04 Camp.	Total	 55 281	 283 358	 121 771	 161 587	 1 926	 4 045
+04 Camp.	Industrias manufactureras	 5 215	 23 711	 10 455	 13 256	  72	  155
+04 Camp.	Comercio	 22 867	 66 977	 34 397	 32 580	  908	 1 367
+04 Camp.	Servicios privados no financieros	 18 635	 85 455	 36 676	 48 779	  897	 2 060
+04 Camp.	Servicios públicos	 3 922	 60 953	 30 560	 30 393	  28	  374
+04 Camp.	Asociaciones religiosas	 2 398	 8 557	 3 958	 4 599	  9	  34
+04 Camp.	Otras actividades económicas	 2 244	 37 705	 5 725	 31 980	  12	  55
+05 Coah.	Total	 132 850	1 163 978	 485 820	 678 159	 5 388	 11 346
+05 Coah.	Industrias manufactureras	 11 580	 465 633	 173 192	 292 441	  444	  947
+05 Coah.	Comercio	 54 936	 222 480	 101 881	 120 599	 2 419	 4 167
+05 Coah.	Servicios privados no financieros	 51 334	 236 998	 112 700	 124 297	 2 437	 5 500
+05 Coah.	Servicios públicos	 6 988	 131 679	 72 981	 58 698	  29	  371
+05 Coah.	Asociaciones religiosas	 4 311	 13 245	 6 310	 6 935	  24	  72
+05 Coah.	Otras actividades económicas	 3 702	 93 943	 18 756	 75 187	  35	  289
+06 Col.	Total	 44 435	 244 776	 114 565	 130 212	 2 199	 4 249
+06 Col.	Industrias manufactureras	 3 548	 20 238	 8 313	 11 925	  116	  242
+06 Col.	Comercio	 16 272	 60 725	 30 138	 30 587	  832	 1 369
+06 Col.	Servicios privados no financieros	 20 004	 74 790	 40 506	 34 283	 1 222	 2 469
+06 Col.	Servicios públicos	 2 071	 47 147	 24 997	 22 150	  7	  93
+06 Col.	Asociaciones religiosas	  789	 2 849	 1 394	 1 454	  9	  29
+06 Col.	Otras actividades económicas	 1 752	 39 028	 9 216	 29 812	  13	  47
+07 Chis.	Total	 339 113	1 090 339	 509 661	 580 678	 9 910	 16 726
+07 Chis.	Industrias manufactureras	 35 623	 95 399	 38 669	 56 730	  563	  990
+07 Chis.	Comercio	 164 266	 359 891	 194 905	 164 986	 5 450	 7 668
+07 Chis.	Servicios privados no financieros	 87 056	 241 602	 115 957	 125 645	 3 699	 6 883
+07 Chis.	Servicios públicos	 26 232	 233 416	 107 145	 126 271	  90	  765
+07 Chis.	Asociaciones religiosas	 21 824	 95 124	 39 335	 55 789	  36	  122
+07 Chis.	Otras actividades económicas	 4 111	 64 907	 13 651	 51 256	  72	  298
+08 Chih.	Total	 151 551	1 334 532	 594 715	 739 817	 5 596	 10 745
+08 Chih.	Industrias manufactureras	 10 492	 558 405	 249 585	 308 820	  274	  544
+08 Chih.	Comercio	 62 129	 261 691	 114 197	 147 493	 2 208	 3 629
+08 Chih.	Servicios privados no financieros	 60 353	 247 897	 119 299	 128 598	 3 006	 5 934
+08 Chih.	Servicios públicos	 9 868	 158 096	 85 255	 72 841	  23	  336
+08 Chih.	Asociaciones religiosas	 4 516	 13 298	 5 673	 7 625	  21	  52
+08 Chih.	Otras actividades económicas	 4 193	 95 146	 20 706	 74 440	  64	  250
+09 CDMX	Total	 456 105	4 043 626	1 737 172	2 306 454	 11 698	 27 045
+09 CDMX	Industrias manufactureras	 31 889	 324 667	 125 997	 198 670	  671	 1 520
+09 CDMX	Comercio	 224 540	 915 505	 406 285	 509 220	 5 612	 9 726
+09 CDMX	Servicios privados no financieros	 175 429	1 378 162	 600 514	 777 648	 5 306	 13 131
+09 CDMX	Servicios públicos	 12 023	 752 016	 397 852	 354 164	  55	 2 386
+09 CDMX	Asociaciones religiosas	 3 214	 11 508	 4 730	 6 778	  8	  25
+09 CDMX	Otras actividades económicas	 9 010	 661 768	 201 794	 459 974	  46	  257
+10 Dgo.	Total	 95 423	 504 855	 231 208	 273 648	 3 892	 7 232
+10 Dgo.	Industrias manufactureras	 8 070	 115 379	 43 729	 71 650	  201	  425
+10 Dgo.	Comercio	 39 946	 126 416	 64 349	 62 068	 1 601	 2 614
+10 Dgo.	Servicios privados no financieros	 33 728	 106 661	 55 689	 50 972	 2 040	 3 807
+10 Dgo.	Servicios públicos	 8 801	 102 083	 54 390	 47 693	  16	  153
+10 Dgo.	Asociaciones religiosas	 3 146	 8 596	 4 348	 4 247	  7	  25
+10 Dgo.	Otras actividades económicas	 1 731	 45 720	 8 702	 37 018	  27	  208
+11 Gto.	Total	 345 116	1 804 920	 824 687	 980 233	 10 674	 20 961
+11 Gto.	Industrias manufactureras	 39 906	 575 617	 223 530	 352 086	  890	 2 850
+11 Gto.	Comercio	 164 585	 480 022	 240 798	 239 223	 5 254	 8 192
+11 Gto.	Servicios privados no financieros	 114 047	 398 273	 200 370	 197 903	 4 442	 8 562
+11 Gto.	Servicios públicos	 15 536	 214 718	 120 717	 94 002	  42	 1 242
+11 Gto.	Asociaciones religiosas	 6 266	 18 691	 10 409	 8 282	  17	  52
+11 Gto.	Otras actividades económicas	 4 777	 117 599	 28 863	 88 736	  29	  63
+12 Gro.	Total	 274 150	 896 931	 455 582	 441 349	 6 044	 11 642
+12 Gro.	Industrias manufactureras	 58 443	 118 537	 65 249	 53 288	  404	  790
+12 Gro.	Comercio	 116 058	 259 171	 146 719	 112 453	 3 193	 4 909
+12 Gro.	Servicios privados no financieros	 65 069	 196 571	 102 711	 93 860	 2 352	 4 619
+12 Gro.	Servicios públicos	 21 531	 237 931	 111 477	 126 454	  47	 1 083
+12 Gro.	Asociaciones religiosas	 8 694	 35 278	 14 890	 20 387	  13	  41
+12 Gro.	Otras actividades económicas	 4 355	 49 443	 14 536	 34 907	  35	  200
+13 Hgo.	Total	 201 629	 754 379	 362 238	 392 142	 8 581	 14 968
+13 Hgo.	Industrias manufactureras	 22 751	 132 117	 50 010	 82 107	  619	 1 180
+13 Hgo.	Comercio	 92 567	 218 509	 116 255	 102 254	 4 150	 6 102
+13 Hgo.	Servicios privados no financieros	 63 275	 184 428	 96 580	 87 848	 3 718	 7 011
+13 Hgo.	Servicios públicos	 15 658	 157 040	 82 286	 74 754	  47	  497
+13 Hgo.	Asociaciones religiosas	 5 027	 14 995	 6 617	 8 378	  9	  29
+13 Hgo.	Otras actividades económicas	 2 351	 47 290	 10 489	 36 801	  38	  149
+14 Jal.	Total	 426 865	2 508 898	1 135 283	1 373 615	 12 861	 25 200
+14 Jal.	Industrias manufactureras	 39 938	 566 091	 225 258	 340 833	  843	 2 071
+14 Jal.	Comercio	 194 494	 749 482	 355 484	 393 998	 5 970	 10 044
+14 Jal.	Servicios privados no financieros	 159 919	 687 168	 340 774	 346 394	 5 923	 12 340
+14 Jal.	Servicios públicos	 18 386	 301 758	 159 807	 141 951	  47	  445
+14 Jal.	Asociaciones religiosas	 6 102	 16 976	 7 473	 9 502	  16	  27
+14 Jal.	Otras actividades económicas	 8 026	 187 424	 46 488	 140 936	  62	  273
+15 Mex.	Total	 899 575	3 619 193	1 690 923	1 928 270	 33 321	 55 582
+15 Mex.	Industrias manufactureras	 85 634	 726 308	 265 672	 460 635	 2 202	 4 379
+15 Mex.	Comercio	 462 209	1 179 035	 598 705	 580 331	 17 019	 24 705
+15 Mex.	Servicios privados no financieros	 301 083	 901 718	 447 221	 454 497	 13 778	 24 281
+15 Mex.	Servicios públicos	 30 666	 543 453	 303 373	 240 080	  191	 1 663
+15 Mex.	Asociaciones religiosas	 10 363	 33 459	 14 278	 19 181	  38	  96
+15 Mex.	Otras actividades económicas	 9 620	 235 221	 61 675	 173 546	  93	  458
+16 Mich.	Total	 344 935	1 208 723	 599 553	 609 170	 11 153	 19 233
+16 Mich.	Industrias manufactureras	 46 868	 164 822	 67 539	 97 283	  812	 1 507
+16 Mich.	Comercio	 155 439	 401 969	 216 153	 185 816	 5 236	 7 824
+16 Mich.	Servicios privados no financieros	 114 998	 326 751	 172 907	 153 843	 4 998	 9 102
+16 Mich.	Servicios públicos	 16 874	 219 963	 113 126	 106 836	  47	  459
+16 Mich.	Asociaciones religiosas	 5 892	 19 678	 11 310	 8 369	  9	  23
+16 Mich.	Otras actividades económicas	 4 864	 75 540	 18 518	 57 022	  51	  318
+17 Mor.	Total	 126 214	 519 604	 253 913	 265 691	 4 201	 7 963
+17 Mor.	Industrias manufactureras	 11 835	 70 731	 26 887	 43 844	  187	  372
+17 Mor.	Comercio	 58 820	 152 816	 78 892	 73 924	 1 962	 3 001
+17 Mor.	Servicios privados no financieros	 45 933	 164 854	 86 879	 77 975	 1 988	 3 678
+17 Mor.	Servicios públicos	 4 804	 87 241	 47 305	 39 936	  26	  706
+17 Mor.	Asociaciones religiosas	 2 876	 9 868	 4 623	 5 245	  9	  30
+17 Mor.	Otras actividades económicas	 1 946	 34 094	 9 327	 24 767	  29	  176
+18 Nay.	Total	 85 895	 369 850	 184 805	 185 045	 3 378	 6 643
+18 Nay.	Industrias manufactureras	 7 695	 33 100	 13 173	 19 927	  192	  386
+18 Nay.	Comercio	 32 260	 91 891	 49 407	 42 484	 1 295	 2 021
+18 Nay.	Servicios privados no financieros	 36 329	 133 873	 72 551	 61 322	 1 855	 3 722
+18 Nay.	Servicios públicos	 4 976	 76 415	 41 031	 35 384	  23	  480
+18 Nay.	Asociaciones religiosas	 1 549	 5 377	 2 957	 2 420	  5	  14
+18 Nay.	Otras actividades económicas	 3 087	 29 194	 5 686	 23 508	  8	  20
+19 NL	Total	 212 676	2 162 200	 840 780	1 321 419	 9 314	 19 363
+19 NL	Industrias manufactureras	 17 163	 656 116	 215 948	 440 168	  535	 1 676
+19 NL	Comercio	 85 144	 486 863	 205 002	 281 861	 3 807	 6 475
+19 NL	Servicios privados no financieros	 89 322	 522 316	 237 700	 284 616	 4 831	 10 137
+19 NL	Servicios públicos	 9 721	 206 546	 117 296	 89 250	  39	  395
+19 NL	Asociaciones religiosas	 4 849	 13 759	 5 807	 7 952	  34	  75
+19 NL	Otras actividades económicas	 6 477	 276 600	 59 027	 217 573	  68	  605
+20 Oax.	Total	 350 341	1 033 674	 535 945	 497 730	 8 476	 14 686
+20 Oax.	Industrias manufactureras	 74 454	 139 241	 77 549	 61 692	  650	 1 120
+20 Oax.	Comercio	 135 021	 286 505	 165 351	 121 154	 3 979	 5 822
+20 Oax.	Servicios privados no financieros	 94 292	 246 721	 135 209	 111 512	 3 685	 6 899
+20 Oax.	Servicios públicos	 27 501	 260 090	 124 215	 135 875	  90	  642
+20 Oax.	Asociaciones religiosas	 10 931	 45 282	 20 457	 24 825	  25	  73
+20 Oax.	Otras actividades económicas	 8 142	 55 835	 13 164	 42 671	  47	  130
+21 Pue.	Total	 471 792	1 685 166	 818 479	 866 687	 21 748	 37 927
+21 Pue.	Industrias manufactureras	 71 114	 363 958	 146 242	 217 716	 2 032	 4 679
+21 Pue.	Comercio	 219 348	 510 193	 276 035	 234 158	 10 696	 15 602
+21 Pue.	Servicios privados no financieros	 142 426	 429 851	 217 225	 212 626	 8 711	 15 431
+21 Pue.	Servicios públicos	 23 383	 250 976	 140 706	 110 270	  192	 1 570
+21 Pue.	Asociaciones religiosas	 8 926	 32 460	 14 615	 17 845	  25	  64
+21 Pue.	Otras actividades económicas	 6 596	 97 728	 23 657	 74 071	  92	  581
+22 Qro.	Total	 127 097	 880 347	 403 638	 476 709	 4 748	 9 541
+22 Qro.	Industrias manufactureras	 11 586	 270 696	 110 281	 160 415	  234	  636
+22 Qro.	Comercio	 57 144	 206 289	 99 292	 106 997	 2 094	 3 421
+22 Qro.	Servicios privados no financieros	 48 578	 231 255	 116 191	 115 064	 2 366	 5 256
+22 Qro.	Servicios públicos	 5 407	 92 094	 52 792	 39 302	  20	  117
+22 Qro.	Asociaciones religiosas	 1 731	 7 752	 4 513	 3 239	  4	  9
+22 Qro.	Otras actividades económicas	 2 651	 72 261	 20 569	 51 692	  30	  102
+23 Q. Roo	Total	 75 321	 561 817	 245 583	 316 234	 3 288	 7 645
+23 Q. Roo	Industrias manufactureras	 4 193	 22 074	 5 951	 16 123	  146	  386
+23 Q. Roo	Comercio	 32 422	 141 093	 68 403	 72 690	 1 403	 2 511
+23 Q. Roo	Servicios privados no financieros	 29 958	 260 392	 111 762	 148 630	 1 673	 4 266
+23 Q. Roo	Servicios públicos	 4 108	 92 188	 45 460	 46 728	  20	  323
+23 Q. Roo	Asociaciones religiosas	 3 016	 11 407	 5 070	 6 336	  18	  48
+23 Q. Roo	Otras actividades económicas	 1 625	 34 664	 8 937	 25 727	  28	  111
+24 SLP	Total	 169 278	 838 792	 397 003	 441 789	 5 793	 10 852
+24 SLP	Industrias manufactureras	 17 153	 231 368	 92 279	 139 089	  306	  606
+24 SLP	Comercio	 73 818	 211 825	 106 911	 104 913	 2 604	 4 265
+24 SLP	Servicios privados no financieros	 60 116	 196 620	 103 918	 92 703	 2 755	 5 297
+24 SLP	Servicios públicos	 11 059	 128 962	 70 970	 57 993	  75	  486
+24 SLP	Asociaciones religiosas	 4 395	 16 900	 10 191	 6 708	  8	  20
+24 SLP	Otras actividades económicas	 2 736	 53 118	 12 735	 40 383	  45	  178
+25 Sin.	Total	 153 100	 842 332	 380 965	 461 367	 4 647	 9 629
+25 Sin.	Industrias manufactureras	 14 882	 91 474	 36 243	 55 231	  309	  633
+25 Sin.	Comercio	 57 677	 232 631	 112 197	 120 434	 1 708	 2 833
+25 Sin.	Servicios privados no financieros	 62 843	 247 275	 122 185	 125 090	 2 547	 5 495
+25 Sin.	Servicios públicos	 9 379	 157 524	 84 695	 72 829	  34	  520
+25 Sin.	Asociaciones religiosas	 2 567	 7 573	 3 339	 4 234	  11	  29
+25 Sin.	Otras actividades económicas	 5 751	 105 856	 22 306	 83 550	  38	  119
+26 Son.	Total	 135 234	 966 304	 417 908	 548 396	 4 806	 10 207
+26 Son.	Industrias manufactureras	 14 267	 239 164	 110 110	 129 054	  498	 1 113
+26 Son.	Comercio	 49 014	 214 533	 94 952	 119 581	 1 801	 3 018
+26 Son.	Servicios privados no financieros	 55 218	 229 472	 108 757	 120 715	 2 379	 5 301
+26 Son.	Servicios públicos	 8 002	 145 096	 74 255	 70 841	  58	  498
+26 Son.	Asociaciones religiosas	 3 499	 11 585	 5 555	 6 031	  23	  66
+26 Son.	Otras actividades económicas	 5 234	 126 454	 24 279	 102 175	  47	  211
+27 Tab.	Total	 140 007	 616 706	 268 415	 348 291	 2 829	 5 433
+27 Tab.	Industrias manufactureras	 16 669	 48 389	 17 631	 30 757	  201	  358
+27 Tab.	Comercio	 56 587	 171 935	 83 793	 88 142	 1 299	 2 145
+27 Tab.	Servicios privados no financieros	 44 368	 144 980	 65 164	 79 816	 1 289	 2 676
+27 Tab.	Servicios públicos	 9 213	 134 636	 65 666	 68 970	  12	  137
+27 Tab.	Asociaciones religiosas	 7 939	 38 388	 19 192	 19 196	  10	  36
+27 Tab.	Otras actividades económicas	 5 231	 78 379	 16 970	 61 409	  18	  81
+28 Tamps.	Total	 159 450	1 100 197	 470 831	 629 366	 5 412	 10 012
+28 Tamps.	Industrias manufactureras	 11 025	 345 836	 139 640	 206 196	  297	  565
+28 Tamps.	Comercio	 63 945	 227 382	 103 331	 124 051	 2 360	 3 632
+28 Tamps.	Servicios privados no financieros	 64 040	 225 005	 103 845	 121 160	 2 640	 5 105
+28 Tamps.	Servicios públicos	 8 667	 165 045	 87 722	 77 324	  43	  496
+28 Tamps.	Asociaciones religiosas	 6 432	 19 112	 9 248	 9 865	  24	  62
+28 Tamps.	Otras actividades económicas	 5 341	 117 816	 27 046	 90 770	  48	  152
+29 Tlax.	Total	 107 210	 378 702	 190 594	 188 108	 6 815	 11 617
+29 Tlax.	Industrias manufactureras	 16 794	 99 007	 42 900	 56 107	  752	 1 599
+29 Tlax.	Comercio	 51 011	 106 260	 60 199	 46 061	 3 423	 4 951
+29 Tlax.	Servicios privados no financieros	 32 693	 80 921	 40 524	 40 397	 2 587	 4 450
+29 Tlax.	Servicios públicos	 4 227	 76 713	 42 355	 34 358	  38	  571
+29 Tlax.	Asociaciones religiosas	 1 423	 4 668	 1 776	 2 892	  4	  13
+29 Tlax.	Otras actividades económicas	 1 062	 11 132	 2 839	 8 293	  11	  33
+30 Ver.	Total	 488 674	1 799 476	 866 095	 933 381	 14 441	 26 382
+30 Ver.	Industrias manufactureras	 51 071	 202 561	 66 381	 136 180	  782	 1 587
+30 Ver.	Comercio	 216 182	 554 854	 297 211	 257 643	 6 933	 10 452
+30 Ver.	Servicios privados no financieros	 157 134	 446 544	 229 120	 217 425	 6 517	 12 316
+30 Ver.	Servicios públicos	 35 565	 374 585	 199 913	 174 672	  59	 1 497
+30 Ver.	Asociaciones religiosas	 20 336	 74 711	 37 099	 37 612	  59	  158
+30 Ver.	Otras actividades económicas	 8 386	 146 221	 36 371	 109 850	  91	  372
+31 Yuc.	Total	 157 391	 768 803	 355 998	 412 806	 5 751	 11 911
+31 Yuc.	Industrias manufactureras	 33 303	 137 875	 64 031	 73 844	  365	  770
+31 Yuc.	Comercio	 55 441	 193 016	 93 411	 99 605	 2 386	 4 157
+31 Yuc.	Servicios privados no financieros	 54 219	 214 047	 106 352	 107 695	 2 882	 6 392
+31 Yuc.	Servicios públicos	 6 347	 135 836	 70 495	 65 341	  77	  365
+31 Yuc.	Asociaciones religiosas	 4 002	 15 679	 7 439	 8 240	  12	  37
+31 Yuc.	Otras actividades económicas	 4 078	 72 350	 14 269	 58 081	  29	  190
+32 Zac.	Total	 103 138	 427 604	 197 881	 229 723	 3 254	 5 903
+32 Zac.	Industrias manufactureras	 9 719	 64 826	 23 253	 41 573	  189	  356
+32 Zac.	Comercio	 46 261	 117 566	 61 487	 56 078	 1 556	 2 418
+32 Zac.	Servicios privados no financieros	 32 357	 89 067	 45 215	 43 852	 1 422	 2 523
+32 Zac.	Servicios públicos	 9 996	 103 912	 54 710	 49 202	  63	  521
+32 Zac.	Asociaciones religiosas	 3 363	 11 344	 6 632	 4 711	  6	  10
+32 Zac.	Otras actividades económicas	 1 443	 40 889	 6 583	 34 306	  18	  75`;
+
+        let allData = [];
+        let filteredData = [];
+
+        // Mapear códigos de entidades a nombres completos
+        const entityNames = {
+            '00 EUM': 'Estados Unidos Mexicanos',
+            '01 Ags.': 'Aguascalientes',
+            '02 BC': 'Baja California',
+            '03 BCS': 'Baja California Sur',
+            '04 Camp.': 'Campeche',
+            '05 Coah.': 'Coahuila',
+            '06 Col.': 'Colima',
+            '07 Chis.': 'Chiapas',
+            '08 Chih.': 'Chihuahua',
+            '09 CDMX': 'Ciudad de México',
+            '10 Dgo.': 'Durango',
+            '11 Gto.': 'Guanajuato',
+            '12 Gro.': 'Guerrero',
+            '13 Hgo.': 'Hidalgo',
+            '14 Jal.': 'Jalisco',
+            '15 Mex.': 'Estado de México',
+            '16 Mich.': 'Michoacán',
+            '17 Mor.': 'Morelos',
+            '18 Nay.': 'Nayarit',
+            '19 NL': 'Nuevo León',
+            '20 Oax.': 'Oaxaca',
+            '21 Pue.': 'Puebla',
+            '22 Qro.': 'Querétaro',
+            '23 Q. Roo': 'Quintana Roo',
+            '24 SLP': 'San Luis Potosí',
+            '25 Sin.': 'Sinaloa',
+            '26 Son.': 'Sonora',
+            '27 Tab.': 'Tabasco',
+            '28 Tamps.': 'Tamaulipas',
+            '29 Tlax.': 'Tlaxcala',
+            '30 Ver.': 'Veracruz',
+            '31 Yuc.': 'Yucatán',
+            '32 Zac.': 'Zacatecas'
+        };
+
+        function parseData() {
+            const lines = rawData.trim().split('\n');
+            
+            lines.forEach(line => {
+                const columns = line.split('\t');
+                if (columns.length >= 8) {
+                    const entidadCode = columns[0];
+                    const entidadName = entityNames[entidadCode] || entidadCode;
+                    
+                    const parseNumber = (str) => {
+                        return parseInt(str.replace(/\s+/g, '').replace(/,/g, '')) || 0;
+                    };
+
+                    // Solo agregar si no es el registro "Total" de cada entidad para evitar duplicar
+                    const denominacion = columns[1].trim();
+                    if (denominacion !== 'Total' && denominacion !== 'Total ') {
+                        allData.push({
+                            entidad: entidadName,
+                            denominacion: denominacion,
+                            totalEstablecimientos: parseNumber(columns[2]),
+                            totalPersonal: parseNumber(columns[3]),
+                            totalMujeres: parseNumber(columns[4]),
+                            totalHombres: parseNumber(columns[5]),
+                            establecimientos2024: parseNumber(columns[6]),
+                            personal2024: parseNumber(columns[7])
+                        });
+                    }
+                }
+            });
+
+            filteredData = [...allData];
+        }
+
+        function populateFilters() {
+            const entityFilter = document.getElementById('entityFilter');
+            const sectorFilter = document.getElementById('sectorFilter');
+
+            const entities = [...new Set(allData.map(item => item.entidad))].sort();
+            const sectors = [...new Set(allData.map(item => item.denominacion))].sort();
+
+            entities.forEach(entity => {
+                const option = document.createElement('option');
+                option.value = entity;
+                option.textContent = entity;
+                entityFilter.appendChild(option);
+            });
+
+            sectors.forEach(sector => {
+                const option = document.createElement('option');
+                option.value = sector;
+                option.textContent = sector.length > 50 ? sector.substring(0, 50) + '...' : sector;
+                sectorFilter.appendChild(option);
+            });
+        }
+
+        function displayData(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="entity-cell">${row.entidad}</td>
+                    <td class="sector-cell" title="${row.denominacion}">${row.denominacion}</td>
+                    <td class="number-cell">${row.totalEstablecimientos.toLocaleString('es-MX')}</td>
+                    <td class="number-cell">${row.totalPersonal.toLocaleString('es-MX')}</td>
+                    <td class="number-cell">${row.totalMujeres.toLocaleString('es-MX')}</td>
+                    <td class="number-cell">${row.totalHombres.toLocaleString('es-MX')}</td>
+                    <td class="number-cell new-2024">${row.establecimientos2024.toLocaleString('es-MX')}</td>
+                    <td class="number-cell new-2024">${row.personal2024.toLocaleString('es-MX')}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats(data) {
+            // Calcular estadísticas SOLO de los datos filtrados/mostrados
+            const totalRows = data.length;
+            const totalEstablishments = data.reduce((sum, row) => sum + row.totalEstablecimientos, 0);
+            const new2024 = data.reduce((sum, row) => sum + row.establecimientos2024, 0);
+            const totalPersonal = data.reduce((sum, row) => sum + row.totalPersonal, 0);
+
+            document.getElementById('totalRows').textContent = totalRows.toLocaleString('es-MX');
+            document.getElementById('totalEstablishments').textContent = totalEstablishments.toLocaleString('es-MX');
+            document.getElementById('new2024').textContent = new2024.toLocaleString('es-MX');
+            document.getElementById('totalPersonal').textContent = totalPersonal.toLocaleString('es-MX');
+        }
+
+        function updateResultsInfo() {
+            document.getElementById('showingCount').textContent = filteredData.length.toLocaleString('es-MX');
+            document.getElementById('totalCount').textContent = allData.length.toLocaleString('es-MX');
+        }
+
+        function filterData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const entityFilter = document.getElementById('entityFilter').value;
+            const sectorFilter = document.getElementById('sectorFilter').value;
+
+            filteredData = allData.filter(row => {
+                const matchesSearch = !searchTerm || 
+                    row.entidad.toLowerCase().includes(searchTerm) ||
+                    row.denominacion.toLowerCase().includes(searchTerm);
+                
+                const matchesEntity = !entityFilter || row.entidad === entityFilter;
+                const matchesSector = !sectorFilter || row.denominacion === sectorFilter;
+
+                return matchesSearch && matchesEntity && matchesSector;
+            });
+
+            displayData(filteredData);
+            updateStats(filteredData);
+            updateResultsInfo();
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', filterData);
+        document.getElementById('entityFilter').addEventListener('change', filterData);
+        document.getElementById('sectorFilter').addEventListener('change', filterData);
+
+        // Inicializar
+        parseData();
+        populateFilters();
+        displayData(filteredData);
+        updateStats(filteredData);
+        updateResultsInfo();
+    </script>
+</body>
+</html>
